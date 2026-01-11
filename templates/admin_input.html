@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>INPUT - {{ program.name }}</title>
+    <style>
+        body { background-color: #121212; color: #E0E0E0; font-family: sans-serif; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; display: flex; gap: 30px; }
+        .panel { background: #1E1E24; padding: 20px; border-radius: 8px; border: 1px solid #333; flex: 1; }
+        
+        h2 { margin-top: 0; color: {{ program.color }}; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        h3 { font-size: 1rem; color: #aaa; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;}
+
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 15px; background: #2b2b2b; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; }
+        
+        .btn-add { width: 100%; padding: 12px; background: #444; color: #fff; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-add:hover { background: #555; }
+        
+        .btn-publish { width: 100%; padding: 15px; background: {{ program.color }}; color: #000; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 1.1rem; margin-top: 20px; }
+        .btn-publish:hover { opacity: 0.8; }
+
+        /* ストック・履歴リスト */
+        .list-item { background: #111; padding: 10px; margin-bottom: 8px; border-left: 3px solid #777; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+        .stock-new { border-left-color: #00FFCC; background: #1a2a2a; } /* ストックの色 */
+        .history-item { border-left-color: #555; } /* 履歴の色 */
+
+        .btn-icon { text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-left: 5px; display: inline-block; }
+        .btn-edit { background: #444; color: #fff; }
+        .btn-del { background: #d8000c; color: #fff; }
+
+        .history-section { max-width: 900px; margin: 40px auto 0; }
+        .back-link { display: block; margin-top: 40px; color: #777; text-decoration: none; text-align: center; }
+        .alert { background: #224422; color: #88ff88; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div style="max-width:900px; margin:0 auto 20px;">
+        <h1 style="font-size:1.5rem;">{{ program.name }} 編集画面</h1>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="alert" style="max-width:900px; margin:0 auto 20px;">{{ messages[0] }}</div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        
+        <div class="panel">
+            <h3>🖊️ 新規データをストック</h3>
+            <form method="POST" action="/admin/add/{{ program_id }}">
+                <label>放送日</label>
+                <input type="date" name="date" required id="dateInput">
+                
+                <label>時間</label>
+                <input type="text" name="time" placeholder="17:15" required>
+                
+                <label>タイプ</label>
+                <select name="type" id="typeSelect" onchange="toggleInputs()">
+                    <option value="single">個人</option>
+                    <option value="group">グループ</option>
+                </select>
+
+                <div id="singleInput">
+                    <label>ラジオネーム</label>
+                    <input type="text" name="name" placeholder="例: 宮崎の猫好き">
+                </div>
+
+                <div id="groupInput" style="display:none;">
+                    <label>コーナー名</label>
+                    <input type="text" name="title">
+                    <label>ラジオネーム(「、」区切り)</label>
+                    <textarea name="group_names" rows="2"></textarea>
+                </div>
+
+                <button type="submit" class="btn-add">↓ リストに追加 (まだ非公開)</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h3>📦 現在のストック (未公開)</h3>
+            
+            {% if drafts %}
+                <div style="max-height: 400px; overflow-y: auto;">
+                    {% for post in drafts %}
+                    <div class="list-item stock-new">
+                        <div>
+                            <span style="color: #00FFCC;">{{ post.date }} {{ post.time }}</span><br>
+                            {% if post.type == 'single' %}{{ post.name }}{% else %}{{ post.title }}{% endif %}
+                        </div>
+                        <div>
+                            <a href="/edit/{{ post.id }}" class="btn-icon btn-edit">✏️</a>
+                            <a href="/delete/{{ post.id }}" class="btn-icon btn-del">🗑️</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <form method="POST" action="/admin/publish/{{ program_id }}">
+                    <button type="submit" class="btn-publish" onclick="return confirm('ストックしているデータを全て公開しますか？');">
+                        🚀 サイトに一括公開する
+                    </button>
+                </form>
+
+            {% else %}
+                <div style="text-align:center; padding:50px 0; color:#555;">
+                    現在ストックはありません。<br>左から追加してください。
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="history-section">
+        <h3 style="color:#fff; border-left: 4px solid #777; padding-left: 10px; margin-bottom: 15px;">
+            📋 公開済みの履歴 (最新30件)
+        </h3>
+        
+        {% if history %}
+            <div style="background: #1E1E24; padding: 20px; border-radius: 8px; border: 1px solid #333;">
+                {% for post in history %}
+                <div class="list-item history-item">
+                    <div>
+                        <span style="color: #aaa;">{{ post.date }}</span> <span style="color: #FF9900;">{{ post.time }}</span><br>
+                        {% if post.type == 'single' %}
+                            {{ post.name }}
+                        {% else %}
+                            {{ post.title }} ({{ post.group_names|truncate(20) }})
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a href="/edit/{{ post.id }}" class="btn-icon btn-edit">✏️</a>
+                        <a href="/delete/{{ post.id }}" onclick="return confirm('本当に削除しますか？\n（公開済みのデータが消えます）');" class="btn-icon btn-del">🗑️</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="color: #777;">まだ公開されたデータはありません。</p>
+        {% endif %}
+    </div>
+    <a href="/admin" class="back-link">← ダッシュボードに戻る</a>
+
+    <script>
+        document.getElementById('dateInput').valueAsDate = new Date();
+        function toggleInputs() {
+            const type = document.getElementById('typeSelect').value;
+            if (type === 'single') {
+                document.getElementById('singleInput').style.display = 'block';
+                document.getElementById('groupInput').style.display = 'none';
+            } else {
+                document.getElementById('singleInput').style.display = 'none';
+                document.getElementById('groupInput').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

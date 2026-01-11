@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio Log | HOME</title>
+    <style>
+        /* 共通のダークモード設定 */
+        body {
+            background-color: #121212;
+            color: #E0E0E0;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            margin: 0; padding: 0;
+            text-align: center;
+        }
+        
+        /* ヘッダー */
+        header {
+            padding: 20px;
+            border-bottom: 2px solid #333;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between; /* 左右に配置 */
+            align-items: center;
+        }
+        
+        h1 { margin: 0; font-family: 'Courier New', monospace; letter-spacing: 0.1em; font-size: 1.2rem; }
+        .lamp { display: inline-block; width: 10px; height: 10px; background: red; border-radius: 50%; box-shadow: 0 0 10px red; margin-right: 10px; }
+
+        /* お問い合わせボタンのデザイン */
+        .contact-btn {
+            text-decoration: none;
+            color: #aaa;
+            font-size: 0.8rem;
+            border: 1px solid #444;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .contact-btn:hover {
+            color: #fff;
+            border-color: #fff;
+            background: #333;
+        }
+
+        /* 番組選択ボタンのエリア */
+        .menu-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 番組ボタンのデザイン */
+        .program-btn {
+            display: block;
+            text-decoration: none;
+            background: #1E1E24;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        /* 左側のカラーバー */
+        .program-btn::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 6px;
+            background-color: var(--theme-color);
+        }
+
+        .program-btn:active {
+            transform: scale(0.98);
+            background: #25252b;
+        }
+        
+        .arrow { float: right; opacity: 0.5; }
+
+        /* フッター */
+        footer {
+            margin-top: 50px;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid #333;
+            color: #777;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="lamp"></span>RADIO LOG</h1>
+        
+        <a href="https://forms.gle/gVVeEobYr1PdGFoH7" target="_blank" class="contact-btn">
+            ✉️ お問い合わせ
+        </a>
+    </header>
+
+    <div class="menu-container">
+        <p style="color:#777; margin-bottom:20px;">番組を選択してください</p>
+
+        {% for id, info in programs.items() %}
+        <a href="/program/{{ id }}" class="program-btn" style="--theme-color: {{ info.color }};">
+            {{ info.name }}
+            <span class="arrow">▶</span>
+        </a>
+        {% endfor %}
+    </div>
+
+    <footer>
+        <p style="margin: 5px 0;">※当サイトはファンサイトであり、ラジオ局公式ではありません。</p>
+        <p style="margin: 5px 0; color: #999;">※ラジオでメールが読まれたことを保証するものではありません。</p>
+    </footer>
+</body>
+</html>

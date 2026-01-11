@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM ADMIN | Radio Log</title>
+    <style>
+        body {
+            background-color: #121212; color: #E0E0E0;
+            font-family: "Helvetica Neue", Arial, sans-serif; padding: 20px;
+        }
+        .container { max-width: 500px; margin: 0 auto; background: #1E1E24; padding: 30px; border-radius: 8px; border: 1px solid #333; }
+        h2 { margin-top: 0; color: #FF9900; font-family: monospace; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+        
+        input, select, textarea {
+            width: 100%; padding: 10px; box-sizing: border-box;
+            background: #2b2b2b; border: 1px solid #444; color: #fff; font-size: 1rem; border-radius: 4px;
+        }
+        
+        button {
+            width: 100%; padding: 15px; background: #FF9900; color: #000; font-weight: bold; border: none; cursor: pointer; font-size: 1.1rem; transition: 0.2s;
+        }
+        button:hover { background: #ffcc00; }
+
+        .alert { background: #224422; color: #88ff88; padding: 10px; margin-bottom: 20px; border-radius: 4px; text-align: center; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #777; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>⚙️ DATA INPUT CONSOLE</h2>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert">{{ messages[0] }}</div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label>対象番組</label>
+                <select name="program_id">
+                    {% for id, info in programs.items() %}
+                    <option value="{{ id }}">{{ info.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>放送日</label>
+                <input type="date" name="date" required id="dateInput">
+            </div>
+
+            <div class="form-group">
+                <label>時間 (例: 17:15 / 18:00頃)</label>
+                <input type="text" name="time" placeholder="17:15" required>
+            </div>
+
+            <div class="form-group">
+                <label>タイプ</label>
+                <select name="type" id="typeSelect" onchange="toggleInputs()">
+                    <option value="single">個人 (通常)</option>
+                    <option value="group">グループ (ランキング等)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="singleInput">
+                <label>ラジオネーム</label>
+                <input type="text" name="name" placeholder="例: 宮崎の猫好き">
+            </div>
+
+            <div class="form-group" id="groupInput" style="display:none;">
+                <label>コーナー名/タイトル</label>
+                <input type="text" name="title" placeholder="例: 早押しクイズ">
+                <label style="margin-top:10px;">ラジオネーム (「、」区切り)</label>
+                <textarea name="group_names" rows="3" placeholder="例: 青島サーファー、マンゴーかき氷、鬼の洗濯板"></textarea>
+            </div>
+
+            <button type="submit">DATABASE WRITE</button>
+        </form>
+
+        <hr style="border: 0; border-top: 1px solid #444; margin: 40px 0;">
+
+        <h3 style="color:#fff; border-left: 4px solid #FF9900; padding-left: 10px;">📋 最近の登録履歴</h3>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; color: #ccc; font-size: 0.9rem;">
+                <thead>
+                    <tr style="background: #333; color: #fff;">
+                        <th style="padding: 8px; text-align: left;">日付</th>
+                        <th style="padding: 8px; text-align: left;">内容</th>
+                        <th style="padding: 8px; text-align: center;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in posts %}
+                    <tr style="border-bottom: 1px solid #333;">
+                        <td style="padding: 8px;">{{ post.date }}<br><span style="color: #FF9900;">{{ post.time }}</span></td>
+                        <td style="padding: 8px;">
+                            <span style="font-size: 0.8rem; background:#444; padding:2px 4px; border-radius:3px;">{{ programs[post.program_id].name }}</span><br>
+                            {% if post.type == 'single' %}
+                                {{ post.name }}
+                            {% else %}
+                                {{ post.title }} ({{ post.group_names|truncate(10) }})
+                            {% endif %}
+                        </td>
+                        <td style="padding: 8px; text-align: center;">
+                            <a href="/edit/{{ post.id }}" style="text-decoration: none; background: #444; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">✏️</a>
+                            <a href="/delete/{{ post.id }}" onclick="return confirm('本当に削除しますか？');" style="text-decoration: none; background: #d8000c; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-left: 5px;">🗑️</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <a href="/" class="back-link">← サイトトップへ戻る</a>
+    </div>
+
+    <script>
+        // 今日の日付をセット
+        document.getElementById('dateInput').valueAsDate = new Date();
+
+        // タイプ切り替えで入力欄を出し分ける
+        function toggleInputs() {
+            const type = document.getElementById('typeSelect').value;
+            if (type === 'single') {
+                document.getElementById('singleInput').style.display = 'block';
+                document.getElementById('groupInput').style.display = 'none';
+            } else {
+                document.getElementById('singleInput').style.display = 'none';
+                document.getElementById('groupInput').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

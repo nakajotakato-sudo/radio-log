@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDIT DATA | Radio Log</title>
+    <style>
+        body { background-color: #121212; color: #E0E0E0; font-family: sans-serif; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: #1E1E24; padding: 30px; border-radius: 8px; border: 1px solid #333; }
+        h2 { margin-top: 0; color: #00FFCC; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 10px; box-sizing: border-box; background: #2b2b2b; border: 1px solid #444; color: #fff; border-radius: 4px; }
+        button { width: 100%; padding: 15px; background: #00FFCC; color: #000; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #00ccaa; }
+        .cancel-btn { display: block; text-align: center; margin-top: 15px; color: #777; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>✏️ データの編集</h2>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label>対象番組</label>
+                <select name="program_id">
+                    {% for id, info in programs.items() %}
+                    <option value="{{ id }}" {% if post.program_id == id %}selected{% endif %}>{{ info.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>放送日</label>
+                <input type="date" name="date" value="{{ post.date }}" required>
+            </div>
+            <div class="form-group">
+                <label>時間</label>
+                <input type="text" name="time" value="{{ post.time }}" required>
+            </div>
+            <div class="form-group">
+                <label>タイプ</label>
+                <select name="type" id="typeSelect" onchange="toggleInputs()">
+                    <option value="single" {% if post.type == 'single' %}selected{% endif %}>個人</option>
+                    <option value="group" {% if post.type == 'group' %}selected{% endif %}>グループ</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="singleInput">
+                <label>ラジオネーム</label>
+                <input type="text" name="name" value="{{ post.name }}">
+            </div>
+
+            <div class="form-group" id="groupInput" style="display:none;">
+                <label>コーナー名</label>
+                <input type="text" name="title" value="{{ post.title }}">
+                <label style="margin-top:10px;">ラジオネーム (「、」区切り)</label>
+                <textarea name="group_names" rows="3">{{ post.group_names }}</textarea>
+            </div>
+
+            <button type="submit">更新内容を保存</button>
+            <a href="/admin" class="cancel-btn">キャンセルして戻る</a>
+        </form>
+    </div>
+
+    <script>
+        function toggleInputs() {
+            const type = document.getElementById('typeSelect').value;
+            const single = document.getElementById('singleInput');
+            const group = document.getElementById('groupInput');
+            if (type === 'single') { single.style.display = 'block'; group.style.display = 'none'; } 
+            else { single.style.display = 'none'; group.style.display = 'block'; }
+        }
+        // 初期表示の設定
+        toggleInputs();
+    </script>
+</body>
+</html>

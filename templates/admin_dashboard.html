@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ADMIN DASHBOARD | Radio Log</title>
+    <style>
+        body { background-color: #121212; color: #E0E0E0; font-family: sans-serif; padding: 40px; text-align: center; }
+        h1 { margin-bottom: 40px; color: #fff; border-bottom: 1px solid #333; padding-bottom: 20px; display: inline-block; }
+        .grid { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+        .card {
+            background: #1E1E24; border: 1px solid #333; border-radius: 10px; padding: 40px; width: 200px;
+            text-decoration: none; color: #fff; transition: 0.2s; position: relative; overflow: hidden;
+        }
+        .card:hover { transform: translateY(-5px); background: #25252b; }
+        .card::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 10px; background: var(--color);
+        }
+        .name { font-weight: bold; font-size: 1.2rem; display: block; margin-bottom: 10px; }
+        .arrow { font-size: 2rem; color: #555; }
+        .back-link { display: block; margin-top: 50px; color: #777; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h1>⚙️ 管理ダッシュボード</h1>
+    <p style="margin-bottom: 30px; color: #888;">編集したい番組を選択してください</p>
+
+    <div class="grid">
+        {% for id, info in programs.items() %}
+        <a href="/admin/{{ id }}" class="card" style="--color: {{ info.color }};">
+            <span class="name">{{ info.name }}</span>
+            <span class="arrow">→</span>
+        </a>
+        {% endfor %}
+    </div>
+
+    <a href="/" class="back-link">サイトトップへ戻る</a>
+</body>
+</html>

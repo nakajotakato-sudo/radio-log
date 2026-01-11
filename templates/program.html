@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ program.name }} | Radio Log</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1E1E24;
+            --text-main: #E0E0E0;
+            --text-dim: #777777;
+            --accent: {{ program.color }};
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: "Roboto", sans-serif;
+            margin: 0; padding: 0;
+        }
+
+        /* ヘッダー */
+        header {
+            background: #1a1a1a;
+            padding: 15px;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 2px solid var(--accent);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .back-btn { text-decoration: none; color: #fff; font-size: 1.2rem; }
+        .page-title { font-weight: bold; font-size: 1rem; }
+
+        /* お問い合わせアイコン */
+        .contact-icon { text-decoration: none; font-size: 1.2rem; color: #ccc; }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+
+        /* 日付カード */
+        .day-card {
+            background: var(--panel-bg);
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            padding: 20px;
+            position: relative;
+        }
+        .day-header {
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .date { font-family: monospace; font-size: 1.1rem; color: var(--accent); }
+        .weekday { background: #333; padding: 2px 8px; font-size: 0.8rem; border-radius: 4px; }
+
+        /* タイムラインアイテム */
+        .timeline-item {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: baseline;
+        }
+
+        /* 時間表示 */
+        .time {
+            width: 75px; /* 少し幅を広げました */
+            font-family: monospace;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        /* 個人のラジオネーム */
+        .name-single {
+            font-size: 1rem;
+            color: #fff;
+            border-bottom: 1px solid #333;
+            width: 100%;
+            padding-bottom: 4px;
+        }
+
+        /* グループ（あいまい）表示 */
+        .group-block {
+            background: #151515;
+            border-left: 3px solid var(--accent);
+            padding: 10px;
+            width: 100%;
+            border-radius: 0 4px 4px 0;
+        }
+        .group-title {
+            font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; font-weight: bold;
+        }
+        .group-names {
+            font-size: 0.9rem; color: #ccc; line-height: 1.6;
+        }
+
+        .no-data { text-align: center; color: #555; padding: 40px; }
+
+        /* フッター */
+        footer {
+            margin-top: 50px;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid #333;
+            color: #777;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="back-btn">←</a>
+        <div class="page-title">{{ program.name }}</div>
+        
+        <a href="https://forms.gle/k44QZWdPQF5Dy15R9" target="_blank" class="contact-icon" title="お問い合わせ">
+            ✉️
+        </a>
+    </header>
+
+    <div class="container">
+        {% if not posts %}
+            <div class="no-data">まだデータがありません</div>
+        {% endif %}
+
+        {% for post in posts %}
+        <article class="day-card">
+            <div class="day-header">
+                <span class="date">{{ post.date }}</span>
+                <span class="weekday">{{ post.weekday }}曜</span>
+            </div>
+
+            {% for entry in post.entries %}
+                <div class="timeline-item">
+                    <span class="time">{{ entry.time }} <span style="font-size: 0.8rem; opacity: 0.7;">付近</span></span>
+
+                    {% if entry.type == 'single' %}
+                        <div class="name-single">{{ entry.name }}</div>
+
+                    {% elif entry.type == 'group' %}
+                        <div class="group-block">
+                            {% if entry.title %}
+                                <div class="group-title">{{ entry.title }}</div>
+                            {% endif %}
+                            <div class="group-names">
+                                {{ entry.names | join('、') }}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </article>
+        {% endfor %}
+    </div>
+
+    <footer>
+        <p style="margin: 5px 0;">※掲載されている時間はあくまで目安です。</p>
+        <p style="margin: 5px 0;">※当サイトはファンサイトであり、ラジオ局公式ではありません。</p>
+        <p style="margin: 5px 0; color: #999;">※ラジオでメールが読まれたことを保証するものではありません。</p>
+    </footer>
+
+</body>
+</html>

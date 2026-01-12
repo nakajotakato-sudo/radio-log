@@ -27,12 +27,12 @@ def require_auth():
     auth = request.authorization
     if not auth or not check_auth(auth.username, auth.password):
         return authenticate()
+
+
 # ==========================================
-
-
 # データベース設定
-# ------------------------------------------
-# まず現在のフォルダの場所を特定する（basedirの定義）
+# ==========================================
+# まず現在のフォルダの場所を特定する
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # Renderの環境変数からURLを取得する
@@ -67,7 +67,9 @@ class Post(db.Model):
     group_names = db.Column(db.Text)
     is_published = db.Column(db.Boolean, default=False)
 
-# --- ページ処理 ---
+# ==========================================
+# ルーティング (ページ処理)
+# ==========================================
 
 @app.route('/')
 def index():
@@ -120,7 +122,9 @@ def program_page(program_id):
 
     return render_template('program.html', program=program_info, posts=grouped_posts[:7])
 
-# --- 管理システム ---
+# ==========================================
+# 管理システム
+# ==========================================
 
 @app.route('/admin')
 def admin_dashboard():
@@ -181,8 +185,8 @@ def edit_post(id):
         post.date = request.form['date']
         post.time = request.form['time']
         post.type = request.form['type']
-        post.name = request.form.get('name', '')
-        post.title = request.form.get('title', '')
+        post.name = request.form.get('name', ''),
+        post.title = request.form.get('title', ''),
         post.group_names = request.form.get('group_names', '')
         db.session.commit()
         flash('✏️ データを修正しました')
@@ -190,7 +194,12 @@ def edit_post(id):
     
     return render_template('edit.html', programs=PROGRAMS, post=post)
 
+# ==========================================
+# ★自動初期化設定 (ここを追加しました)
+# ==========================================
+# アプリ起動時に「表」があるかチェックし、なければ自動で作る
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True, port=5000, host='0.0.0.0')

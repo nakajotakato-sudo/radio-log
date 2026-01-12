@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, flash, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta # ←日付計算用にtimedeltaを追加
+from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
@@ -10,8 +10,8 @@ app.secret_key = 'radio_app_secret_key'
 # 🔐 セキュリティ設定 (Basic認証)
 # ==========================================
 # ★IDとパスワード（必要に応じて変更してください）
-BASIC_AUTH_USER = 'zundarashi'
-BASIC_AUTH_PASS = '3351'
+BASIC_AUTH_USER = 'admin'
+BASIC_AUTH_PASS = 'secret'
 
 def check_auth(username, password):
     return username == BASIC_AUTH_USER and password == BASIC_AUTH_PASS
@@ -31,9 +31,21 @@ def require_auth():
 
 
 # データベース設定
+# ------------------------------------------
+# まず現在のフォルダの場所を特定する（basedirの定義）
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'radio.db')
+
+# Renderの環境変数からURLを取得する
+database_url = os.environ.get('DATABASE_URL')
+
+# PostgreSQL用のURL修正（postgres:// を postgresql:// に直す）
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+# データベースの場所を設定（優先：Neon / なければ：PC内のradio.db）
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///' + os.path.join(basedir, 'radio.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
 # 番組設定
@@ -64,19 +76,13 @@ def index():
 @app.route('/program/<program_id>')
 def program_page(program_id):
     program_info = PROGRAMS.get(program_id)
-    # 制限なくすべての公開データを取得（新しい順）
     all_posts = Post.query.filter_by(program_id=program_id, is_published=True).order_by(Post.date.desc(), Post.time.asc()).all()
 
-    # --- データを「日付」＞「時間帯」の階層構造に整理する ---
     grouped_posts = []
-    
-    # 一時的な辞書 { "2025-01-12": { "08": [posts...], "09": [posts...] } }
     temp_data = {}
 
     for post in all_posts:
         date_key = post.date
-        
-        # 時間帯（何時台か）を取得。例 "08:30" -> "08"
         hour_key = post.time.split(':')[0] if ':' in post.time else "その他"
 
         if date_key not in temp_data:
@@ -85,22 +91,18 @@ def program_page(program_id):
         if hour_key not in temp_data[date_key]:
             temp_data[date_key][hour_key] = []
             
-        # 投稿データの整形
         entry_data = {
             "type": post.type, "time": post.time, "name": post.name,
             "title": post.title, "names": post.group_names.split('、') if post.group_names else []
         }
         temp_data[date_key][hour_key].append(entry_data)
 
-    # 辞書をリスト形式に変換（テンプレートで使いやすくするため）
-    # 日付は降順（新しい順）、時間帯は昇順（8時->9時）
-    sorted_dates = sorted(temp_data.keys(), reverse=True) # 日付は新しい順
+    sorted_dates = sorted(temp_data.keys(), reverse=True)
     
     for d in sorted_dates:
         dt = datetime.strptime(d, '%Y-%m-%d')
         weekday = ["月", "火", "水", "木", "金", "土", "日"][dt.weekday()]
         
-        # 時間帯を昇順（朝→夕方）に並べ替え
         sorted_hours = sorted(temp_data[d].keys())
         
         hours_list = []
@@ -116,7 +118,6 @@ def program_page(program_id):
             "hours": hours_list
         })
 
-    # 最新7日分だけを表示（ページが重くなるのを防ぐため）
     return render_template('program.html', program=program_info, posts=grouped_posts[:7])
 
 # --- 管理システム ---
@@ -128,17 +129,14 @@ def admin_dashboard():
 @app.route('/admin/<program_id>')
 def admin_input(program_id):
     program_info = PROGRAMS.get(program_id)
-    
-    # 下書き（未公開）は全て取得
     drafts = Post.query.filter_by(program_id=program_id, is_published=False).order_by(Post.time.desc()).all()
     
-    # ★修正箇所：過去7日間の履歴を取得（件数制限なし）
     seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
     
     history = Post.query.filter(
         Post.program_id == program_id,
         Post.is_published == True,
-        Post.date >= seven_days_ago  # 7日前以降のデータ
+        Post.date >= seven_days_ago
     ).order_by(Post.date.desc(), Post.time.desc()).all()
     
     return render_template('admin_input.html', program=program_info, program_id=program_id, drafts=drafts, history=history)

@@ -10,8 +10,8 @@ app.secret_key = 'radio_app_secret_key'
 # 🔐 セキュリティ設定 (Basic認証)
 # ==========================================
 # ★IDとパスワード（必要に応じて変更してください）
-BASIC_AUTH_USER = 'admin'
-BASIC_AUTH_PASS = 'secret'
+BASIC_AUTH_USER = 'zundarashi'
+BASIC_AUTH_PASS = '3351'
 
 def check_auth(username, password):
     return username == BASIC_AUTH_USER and password == BASIC_AUTH_PASS

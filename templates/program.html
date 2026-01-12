@@ -30,8 +30,6 @@
         }
         .back-btn { text-decoration: none; color: #fff; font-size: 1.2rem; }
         .page-title { font-weight: bold; font-size: 1rem; }
-
-        /* お問い合わせアイコン */
         .contact-icon { text-decoration: none; font-size: 1.2rem; color: #ccc; }
 
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -41,29 +39,44 @@
             background: var(--panel-bg);
             border: 1px solid #333;
             border-radius: 4px;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             padding: 20px;
             position: relative;
         }
         .day-header {
-            border-bottom: 1px solid #444;
+            border-bottom: 2px solid var(--accent);
             padding-bottom: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .date { font-family: monospace; font-size: 1.1rem; color: var(--accent); }
-        .weekday { background: #333; padding: 2px 8px; font-size: 0.8rem; border-radius: 4px; }
+        .date { font-family: monospace; font-size: 1.2rem; color: #fff; font-weight: bold; }
+        .weekday { background: var(--accent); color:#000; padding: 2px 8px; font-size: 0.8rem; border-radius: 4px; font-weight: bold; }
+
+        /* 時間帯の見出し（8時台など） */
+        .hour-divider {
+            display: flex;
+            align-items: center;
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin: 20px 0 10px 0;
+            padding-left: 5px;
+            border-left: 4px solid var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 10px;
+        }
 
         /* タイムラインアイテム */
         .timeline-item {
             display: flex;
             margin-bottom: 12px;
             align-items: baseline;
+            padding-left: 10px;
         }
 
-        /* 時間表示 */
+        /* 時間表示エリア（幅を少し広げました） */
         .time {
-            width: 75px; /* 少し幅を広げました */
+            width: 85px; /* "分 付近"が入るように幅を確保 */
             font-family: monospace;
             color: var(--text-dim);
             font-size: 0.9rem;
@@ -82,7 +95,7 @@
         /* グループ（あいまい）表示 */
         .group-block {
             background: #151515;
-            border-left: 3px solid var(--accent);
+            border-left: 3px solid #444;
             padding: 10px;
             width: 100%;
             border-radius: 0 4px 4px 0;
@@ -113,7 +126,7 @@
         <a href="/" class="back-btn">←</a>
         <div class="page-title">{{ program.name }}</div>
         
-        <a href="https://forms.gle/k44QZWdPQF5Dy15R9" target="_blank" class="contact-icon" title="お問い合わせ">
+        <a href="https://forms.gle/UAWaMpLpHoacQcgn6" target="_blank" class="contact-icon" title="お問い合わせ">
             ✉️
         </a>
     </header>
@@ -130,33 +143,40 @@
                 <span class="weekday">{{ post.weekday }}曜</span>
             </div>
 
-            {% for entry in post.entries %}
-                <div class="timeline-item">
-                    <span class="time">{{ entry.time }} <span style="font-size: 0.8rem; opacity: 0.7;">付近</span></span>
-
-                    {% if entry.type == 'single' %}
-                        <div class="name-single">{{ entry.name }}</div>
-
-                    {% elif entry.type == 'group' %}
-                        <div class="group-block">
-                            {% if entry.title %}
-                                <div class="group-title">{{ entry.title }}</div>
-                            {% endif %}
-                            <div class="group-names">
-                                {{ entry.names | join('、') }}
-                            </div>
-                        </div>
-                    {% endif %}
+            {% for hour_group in post.hours %}
+                <div class="hour-divider">
+                    🕗 {{ hour_group.hour_label }}時台
                 </div>
+
+                {% for entry in hour_group.entries %}
+                    <div class="timeline-item">
+                        <span class="time">
+                            {{ entry.time[-2:] }}分<span style="font-size: 0.8rem; opacity: 0.7; margin-left: 2px;">付近</span>
+                        </span>
+
+                        {% if entry.type == 'single' %}
+                            <div class="name-single">{{ entry.name }}</div>
+
+                        {% elif entry.type == 'group' %}
+                            <div class="group-block">
+                                {% if entry.title %}
+                                    <div class="group-title">{{ entry.title }}</div>
+                                {% endif %}
+                                <div class="group-names">
+                                    {{ entry.names | join('、') }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             {% endfor %}
-        </article>
+            </article>
         {% endfor %}
     </div>
 
     <footer>
         <p style="margin: 5px 0;">※掲載されている時間はあくまで目安です。</p>
         <p style="margin: 5px 0;">※当サイトはファンサイトであり、ラジオ局公式ではありません。</p>
-        <p style="margin: 5px 0; color: #999;">※ラジオでメールが読まれたことを保証するものではありません。</p>
     </footer>
 
 </body>

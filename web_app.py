@@ -24,11 +24,16 @@ def authenticate():
 
 @app.before_request
 def require_auth():
-    auth = request.authorization
-    if not auth or not check_auth(auth.username, auth.password):
-        return authenticate()
-
-
+    # パスワード制限をかけたいURLの始まりをリストにする
+    protected_routes = ['/admin', '/edit', '/delete']
+    
+    # 今アクセスしているURLが、上のリストのどれかで始まっていたらチェックする
+    for route in protected_routes:
+        if request.path.startswith(route):
+            auth = request.authorization
+            if not auth or not check_auth(auth.username, auth.password):
+                return authenticate()
+            
 # ==========================================
 # データベース設定
 # ==========================================

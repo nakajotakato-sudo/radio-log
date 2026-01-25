@@ -4,52 +4,52 @@ from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
-app.secret_key = 'radio_app_secret_key'
 
 # ==========================================
-# 🔐 セキュリティ設定 (Basic認証)
+# 🔐 セキュリティ設定 (環境変数)
 # ==========================================
-# ★IDとパスワード（必要に応じて変更してください）
-BASIC_AUTH_USER = 'zundarashi'
-BASIC_AUTH_PASS = '3351'
+# ローカル開発時は第2引数の値が使われ、Render公開時は管理画面の設定が優先されます
+app.secret_key = os.environ.get('SECRET_KEY', 'radio_app_secret_key_default')
+
+BASIC_AUTH_USER = os.environ.get('BASIC_AUTH_USER', 'zundarashi')
+BASIC_AUTH_PASS = os.environ.get('BASIC_AUTH_PASS', '3351')
 
 def check_auth(username, password):
     return username == BASIC_AUTH_USER and password == BASIC_AUTH_PASS
 
 def authenticate():
     return Response(
-    'このサイトを見るにはログインが必要です。\n'
-    '正しいIDとパスワードを入力してください。', 401,
-    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+        'このサイトを見るにはログインが必要です。\n'
+        '正しいIDとパスワードを入力してください。', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
 @app.before_request
 def require_auth():
-    # パスワード制限をかけたいURLの始まりをリストにする
     protected_routes = ['/admin', '/edit', '/delete']
-    
-    # 今アクセスしているURLが、上のリストのどれかで始まっていたらチェックする
     for route in protected_routes:
         if request.path.startswith(route):
             auth = request.authorization
             if not auth or not check_auth(auth.username, auth.password):
                 return authenticate()
-            
+
 # ==========================================
 # データベース設定
 # ==========================================
-# まず現在のフォルダの場所を特定する
 basedir = os.path.abspath(os.path.dirname(__file__))
-
-# Renderの環境変数からURLを取得する
 database_url = os.environ.get('DATABASE_URL')
 
-# PostgreSQL用のURL修正（postgres:// を postgresql:// に直す）
+# PostgreSQL用のURL修正（Render/Neon対策）
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-# データベースの場所を設定（優先：Neon / なければ：PC内のradio.db）
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///' + os.path.join(basedir, 'radio.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# 本番環境（PostgreSQL）の場合のみ、SSL接続を強制する設定を追加
+if database_url:
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        "connect_args": {"sslmode": "require"}
+    }
 
 db = SQLAlchemy(app)
 
@@ -190,9 +190,11 @@ def edit_post(id):
         post.date = request.form['date']
         post.time = request.form['time']
         post.type = request.form['type']
-        post.name = request.form.get('name', ''),
-        post.title = request.form.get('title', ''),
+        # ★修正ポイント：末尾のカンマを削除して正常な文字列代入に変更
+        post.name = request.form.get('name', '')
+        post.title = request.form.get('title', '')
         post.group_names = request.form.get('group_names', '')
+        
         db.session.commit()
         flash('✏️ データを修正しました')
         return redirect(url_for('admin_input', program_id=post.program_id))
@@ -200,11 +202,12 @@ def edit_post(id):
     return render_template('edit.html', programs=PROGRAMS, post=post)
 
 # ==========================================
-# ★自動初期化設定 (ここを追加しました)
+# 自動初期化設定
 # ==========================================
-# アプリ起動時に「表」があるかチェックし、なければ自動で作る
 with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
+    # 公開時はgunicorn等が使われるためこのブロックは通りませんが、
+    # ローカル開発用にdebug=Trueを維持しています
     app.run(debug=True, port=5000, host='0.0.0.0')
